@@ -21,7 +21,7 @@ This project uses CMake for its build system. It is recommended to use an out-of
    cd term-view
 
 2. Create a build directory and navigate into it:
-    ```Bash
+    ```bash
 
     mkdir build
     cd build
@@ -35,6 +35,6 @@ This project uses CMake for its build system. It is recommended to use an out-of
 ## Usage
 
 After building the project, you can run the executable from the build directory:
-    ```Bash
+```bash
 
-    ./term_view
+./term_view
