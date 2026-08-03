@@ -27,7 +27,7 @@ This project uses CMake for its build system. It is recommended to use an out-of
     cd build
 
 3. Generate the build files and compile the project:
-    ```Bash
+    ```bash
 
     cmake ..
     make
