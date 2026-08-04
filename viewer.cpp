@@ -32,6 +32,11 @@ void Viewer::nextTrack(){
 	}
 }
 
+std::string Viewer::getCurrentFilePath(){
+	const Track& currentTrack = currentPlaylist[current_index];
+	return currentTrack.getFilePath();
+}
+
 void Viewer::previousTrack(){
 	if (currentPlaylist.empty()) return;
 

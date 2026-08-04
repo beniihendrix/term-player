@@ -2,6 +2,7 @@
 #include <string>
 #include "database.h"
 #include "viewer.h"
+#include "player.h"
 
 void clearScreen() {
 	std::cout << "\033[2J\033[H" << std::flush;
@@ -17,6 +18,10 @@ int main(){
 	std::getline(std::cin, usrInput);
 
 	std::cout << "Initializing database...\n";
+
+	std::cout << "Initializing player\n";
+
+	Player player;
 
 	auto musicDb = std::make_unique<DataBase>(usrInput);
 
@@ -60,12 +65,21 @@ int main(){
 				} else if (usrInput == "down")
 				{
 					artistView.previousTrack();
+				} else if (usrInput == "play")
+				{
+					std::cout << "Now Playing: " << artistView.getCurrentFilePath() << std::endl;
+					player.play(artistView.getCurrentFilePath());
+				} else if (usrInput == "stop")
+				{
+					player.stop();
 				} else {
 					artistView.displayCurrentTrack();
 				}
 
 				std::getline(std::cin, usrInput);
 			}
+
+			player.stop();
 
 		} else if (usrInput == "2")
 		{

@@ -51,3 +51,6 @@ music_library.db
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# silly vscode
+.vscode
