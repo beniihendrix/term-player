@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include "track.h"
 
 extern "C" {
     #include <libavformat/avformat.h>
@@ -27,13 +28,13 @@ Player::~Player(){
     Pa_Terminate();
 }
 
-void Player::play(const std::string& path){
+void Player::play(const Track& track){
     if (isPlaying)
     {
         stop(); // stop playing last song
     }
 
-    filePath = path;
+    filePath = track.getFilePath();
     isPlaying = true;
 
     // open PA stream

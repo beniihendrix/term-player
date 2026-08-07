@@ -1,10 +1,10 @@
 #pragma once
-#include <iostream>
 #include <atomic>
 #include <string>
 #include <thread>
 #include <portaudio.h>
 #include "pa_ringbuffer.h"
+#include "track.h"
 
 /*
 
@@ -42,6 +42,6 @@ public:
     Player();
     ~Player();
 
-    void play(const std::string& path);
+    void play(const Track& track);
     void stop();
 };

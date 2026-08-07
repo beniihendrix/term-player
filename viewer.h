@@ -12,6 +12,7 @@ public:
 	~Viewer() = default;
 	int getCurrent_Index() {return current_index;}
 	std::string getCurrentFilePath();
+	Track getCurrent_Track() {return currentPlaylist[current_index];}
 	void nextTrack();
 	void previousTrack();
 	void displayCurrentTrack();

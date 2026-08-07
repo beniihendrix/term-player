@@ -68,7 +68,7 @@ int main(){
 				} else if (usrInput == "play")
 				{
 					std::cout << "Now Playing: " << artistView.getCurrentFilePath() << std::endl;
-					player.play(artistView.getCurrentFilePath());
+					player.play(artistView.getCurrent_Track());
 				} else if (usrInput == "stop")
 				{
 					player.stop();
