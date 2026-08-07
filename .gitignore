@@ -54,3 +54,4 @@ music_library.db
 
 # silly vscode
 .vscode
+.cache
