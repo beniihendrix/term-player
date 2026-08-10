@@ -26,13 +26,15 @@ pkg_check_modules(SWRESAMPLE REQUIRED IMPORTED_TARGET libswresample)
 pkg_check_modules(PORTAUDIO REQUIRED IMPORTED_TARGET portaudio-2.0)
 
 add_executable(term_view
-	main.cpp
-	database.cpp
-	track.cpp
-	viewer.cpp
-	player.cpp
-	pa_ringbuffer.c
+	src/main.cpp
+	src/database.cpp
+	src/track.cpp
+	src/viewer.cpp
+	src/player.cpp
+	src/pa_ringbuffer.c
 )
+
+target_include_directories(term_view PRIVATE src)
 
 target_link_libraries(term_view PRIVATE
 	SQLite3::SQLite3

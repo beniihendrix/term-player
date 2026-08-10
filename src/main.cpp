@@ -43,7 +43,7 @@ int main(){
 			std::cout << "Please search by artist:\n";
 			std::getline(std::cin, usrInput);
 
-			std::vector<Track> results = musicDb->dbQuery(usrInput);
+			std::vector<Track> results = musicDb->dbQuery(usrInput, 0);
 			// test by printout out items of vector
 			for (const auto& element : results)
 			{
@@ -83,10 +83,88 @@ int main(){
 
 		} else if (usrInput == "2")
 		{
-			std::cout << "You are scrolling by Album\n";
+			std::cout << "Please search by Album\n";
+			std::getline(std::cin, usrInput);
+
+			std::vector<Track> results = musicDb->dbQuery(usrInput, 1);
+			// test by printout out items of vector
+			for (const auto& element : results)
+			{
+				std::cout << element << "\n";
+			}
+
+			// viewer implementation
+			Viewer artistView(results);
+
+			while (usrInput != "0")
+			{
+				clearScreen();
+				std::cout << "Type 0 to exit fully\n";
+				std::cout << "Type 'up' to ascend in playlist, 'down' to descend in playlist\n";
+
+				if (usrInput == "up")
+				{
+					artistView.nextTrack();
+				} else if (usrInput == "down")
+				{
+					artistView.previousTrack();
+				} else if (usrInput == "play")
+				{
+					std::cout << "Now Playing: " << artistView.getCurrentFilePath() << std::endl;
+					player.play(artistView.getCurrent_Track());
+				} else if (usrInput == "stop")
+				{
+					player.stop();
+				} else {
+					artistView.displayCurrentTrack();
+				}
+
+				std::getline(std::cin, usrInput);
+			}
+
+			player.stop();
 		} else if (usrInput == "3")
 		{
-			std::cout << "You are scrolling by Song.\n";
+			std::cout << "Please search by Song.\n";
+			std::getline(std::cin, usrInput);
+
+			std::vector<Track> results = musicDb->dbQuery(usrInput, 2);
+			// test by printout out items of vector
+			for (const auto& element : results)
+			{
+				std::cout << element << "\n";
+			}
+
+			// viewer implementation
+			Viewer artistView(results);
+
+			while (usrInput != "0")
+			{
+				clearScreen();
+				std::cout << "Type 0 to exit fully\n";
+				std::cout << "Type 'up' to ascend in playlist, 'down' to descend in playlist\n";
+
+				if (usrInput == "up")
+				{
+					artistView.nextTrack();
+				} else if (usrInput == "down")
+				{
+					artistView.previousTrack();
+				} else if (usrInput == "play")
+				{
+					std::cout << "Now Playing: " << artistView.getCurrentFilePath() << std::endl;
+					player.play(artistView.getCurrent_Track());
+				} else if (usrInput == "stop")
+				{
+					player.stop();
+				} else {
+					artistView.displayCurrentTrack();
+				}
+
+				std::getline(std::cin, usrInput);
+			}
+
+			player.stop();
 		}
 	}
 

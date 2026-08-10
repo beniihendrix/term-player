@@ -88,16 +88,32 @@ DataBase::DataBase(std::string filePath){
 	std::cout << "Indexed " << insertedCount << " mp3 file(s) into the database.\n";
 }
 
-std::vector<Track> DataBase::dbQuery(const std::string& search){
+std::vector<Track> DataBase::dbQuery(const std::string& search, int searchType = 0){
 	std::vector<Track> results;
 
 	// this statement executes a db query and returns a vector of tracks,
 	// meant to be scrolled through and called by the viewer class.
 
 	sqlite3_stmt* stmt = nullptr;
+	std::string sql = "";
 
-	// example: searching by artist (I should change this)
-	std::string sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE artist LIKE ?;";
+	// determine what kind of search with switch statement
+	switch (searchType)
+	{
+		case 0:	// artist
+			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE artist LIKE ? ORDER BY album ASC, track_number ASC;";
+			break;
+		case 1: // album
+			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE album LIKE ? ORDER BY track_number ASC;";
+			break;
+		case 2:	// song
+			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE title LIKE ? ORDER BY artist ASC, album ASC, track_number ASC;";
+			break;
+		default: // fallback in case invalid int was passed
+			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE artist LIKE ? ORDER BY album ASC, track_number ASC;";
+			break;
+	}
+
 	sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
 
 	// bind search term to query

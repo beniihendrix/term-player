@@ -13,7 +13,7 @@
 class DataBase {
 	public:
 		DataBase(std::string filePath);
-		std::vector<Track> dbQuery(const std::string& search);
+		std::vector<Track> dbQuery(const std::string& search, int searchType);
 		bool initializeDatabase();
 		bool insertTrack(const Track& track);
 		~DataBase();
