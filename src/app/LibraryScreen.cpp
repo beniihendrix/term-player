@@ -1,4 +1,5 @@
 #include "LibraryScreen.hpp"
+#include "PlaybackControl.hpp"
 
 #include <ftxui/component/component_options.hpp>
 
@@ -66,7 +67,17 @@ ftxui::Component LibraryScreen(AppState& state) {
         option
     );
 
-    return Renderer(song_menu, [song_menu, &state] {
+    // adding playback bar
+    auto playback_bar = PlaybackControl(state);
+
+    auto screen_container = Container::Vertical({
+        song_menu,
+        playback_bar
+    });
+
+    return Renderer(screen_container, [song_menu, playback_bar, &state] {
+        const Track& selected_track = state.search_result[state.selected_track];
+        // pulling the address of the selected track
         
         auto header = hbox({
             text("#")       | size(WIDTH, EQUAL, 5),
@@ -78,10 +89,18 @@ ftxui::Component LibraryScreen(AppState& state) {
         return vbox({
             header,
             separator(),
-            song_menu->Render()
+            hbox({
+                song_menu->Render()
                 | vscroll_indicator
                 | frame
                 | flex,
+                
+                separator(),
+
+                text(selected_track.printASCII()) | center
+            }) | flex,
+            separator(),
+            playback_bar->Render(),
         }) | border;
     });
 }

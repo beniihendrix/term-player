@@ -43,6 +43,7 @@ struct AppState {
     Player player;
     int currently_playing_index = 0;
     float playing_progress;
+    int volume = 100;
 
     void SetScreen(Screen screen) {
         screen_index = static_cast<int>(screen);

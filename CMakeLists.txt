@@ -41,6 +41,7 @@ add_executable(PlayerUI
 	src/app/LoadingScreen.cpp
 	src/app/LibraryScreen.cpp
 	src/app/PlayerScreen.cpp
+	src/app/PlaybackControl.cpp
 
 	src/database/Database.cpp
 
