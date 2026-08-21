@@ -4,7 +4,7 @@
 #include <thread>
 #include <portaudio.h>
 #include "pa_ringbuffer.h"
-#include "track.h"
+#include "model/track.hpp"
 
 /*
 

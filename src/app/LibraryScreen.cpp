@@ -1,0 +1,87 @@
+#include "LibraryScreen.hpp"
+
+#include <ftxui/component/component_options.hpp>
+
+ftxui::Component LibraryScreen(AppState& state) {
+    /*
+    Defining the loading screen and returning a ftxui::Component
+    for App to receive
+    */
+
+    using namespace ftxui;
+
+    MenuOption option;
+
+    // creating menu customization for rows with multiple elements
+    option.entries_option.transform =
+        [&state](EntryState entry) -> Element {
+
+            if (entry.index >= state.search_result.size())
+            {
+                return text("");
+            }
+
+            const Track& track = state.search_result[entry.index];
+
+            Element row = hbox({
+                // display track number
+                text(std::to_string(track.getTrack_Num()))
+                    | size(WIDTH, EQUAL, 5),
+                // display title
+                text(track.getTitle())
+                    | size(WIDTH, EQUAL, 30),
+                // display album
+                text(track.getAlbum())
+                    | size(WIDTH, EQUAL, 25),
+                // display artist
+                text(track.getArtist())
+                    | size(WIDTH, EQUAL, 25),
+            });
+
+            if (entry.active)
+            {
+                row = row | inverted;
+            }
+
+            return row;
+        };
+
+    // adding .on_enter functionality
+    option.on_enter = [&state] {
+        if (state.search_result.empty())
+        {
+            return;
+        }
+
+        Track& selected_track = state.search_result[state.selected_track];
+        // update track playing
+        state.currently_playing_index = state.selected_track;
+
+        state.player.play(selected_track);
+    };
+
+    auto song_menu = Menu(
+        &state.library_entries,
+        &state.selected_track,
+        option
+    );
+
+    return Renderer(song_menu, [song_menu, &state] {
+        
+        auto header = hbox({
+            text("#")       | size(WIDTH, EQUAL, 5),
+            text("Title")   | size(WIDTH, EQUAL, 30),
+            text("Album")   | size(WIDTH, EQUAL, 25),
+            text("Artist")  | size(WIDTH, EQUAL, 25),
+        });
+
+        return vbox({
+            header,
+            separator(),
+            song_menu->Render()
+                | vscroll_indicator
+                | frame
+                | flex,
+        }) | border;
+    });
+}

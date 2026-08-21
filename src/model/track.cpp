@@ -1,4 +1,4 @@
-#include "track.h"
+#include "track.hpp"
 #include <iostream>
 
 // taglib for pulling metadata
@@ -26,7 +26,7 @@ Track::Track(std::string filePath){
 		// converting to c string and adding to members
 		title = tag->title().toCString(true);
 		artist = tag->artist().toCString(true);
-		album = tag->artist().toCString(true);
+		album = tag->album().toCString(true);
 		track_num = tag->track();
 		year = tag->year();
 	}
@@ -41,13 +41,13 @@ Track::Track(std::string filePath){
 	}
 }
 
-void Track::printASCII() const{
+std::string Track::printASCII() const{
 	// extract cover art image data
 	TagLib::MPEG::File mpegFile(filePath.c_str());
 	if (!mpegFile.isValid() || !mpegFile.ID3v2Tag())
 	{
-		std::cerr << "Could not read audio file or metadata.\n";
-		return;
+		// std::cerr << "Could not read audio file or metadata.\n";
+		return "Could not display file";
 	}
 
 	TagLib::ID3v2::Tag* id3v2 = mpegFile.ID3v2Tag();
@@ -55,8 +55,8 @@ void Track::printASCII() const{
 
 	if (frames.isEmpty())
 	{
-		std::cout << "No album art image found in this track.\n";
-		return;
+		// std::cout << "No album art image found in this track.\n";
+		return "No album art image found in this track.\n";
 	}
 
 	auto* frame = static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frames.front());
@@ -64,7 +64,8 @@ void Track::printASCII() const{
 
 	if (imgData.isEmpty())
 	{
-		std::cout << "Album art buffer is empty.\n";
+		// std::cout << "Album art buffer is empty.\n";
+		return "Album art buffer is empty.\n";
 	}
 
 	// now hand raw bytes to stb_image
@@ -81,8 +82,8 @@ void Track::printASCII() const{
 
 	if (!pixels)
 	{
-		std::cerr << "Failed to decode image data.\n";
-		return;
+		// std::cerr << "Failed to decode image data.\n";
+		return "Failed to decode image data.\n";
 	}
 
 	// turn to ascii
@@ -92,6 +93,7 @@ void Track::printASCII() const{
 
 	// ascii characters from dark to light
 	const std::string asciiRamp = " .:-=+*#%@";
+	std::string output_frame = "";
 
 	for (int y = 0; y < targetHeight; y++)
 	{
@@ -103,12 +105,14 @@ void Track::printASCII() const{
 
 			unsigned char brightness = pixels[origY * width + origX];
 			int rampIndex = (brightness * (asciiRamp.length() -1)) / 255;
-			std::cout << asciiRamp[rampIndex];
+			output_frame += asciiRamp[rampIndex];
 		}
-		std::cout << "\n";
+		output_frame += "\n";
 	}
 
 	stbi_image_free(pixels);
+
+	return output_frame;
 }
 
 void Track::printFull() const {

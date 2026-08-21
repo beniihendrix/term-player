@@ -19,7 +19,7 @@ class Track{
 		int getBitRate() const {return bitrate; }
 		
 		// my beautiful ascii generator
-		void printASCII() const;
+		std::string printASCII() const;
 
 		// operator overloader test for display track
 		friend std::ostream& operator<<(std::ostream& os, const Track& track){

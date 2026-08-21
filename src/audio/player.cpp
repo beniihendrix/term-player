@@ -1,8 +1,7 @@
-#include "player.h"
+#include "player.hpp"
 #include <iostream>
 #include <string>
 #include <thread>
-#include "track.h"
 
 extern "C" {
     #include <libavformat/avformat.h>
