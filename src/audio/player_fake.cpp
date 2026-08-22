@@ -1,4 +1,7 @@
 #include "player.hpp"
+#include <iostream>
+#include <string>
+#include <thread>
 
 extern "C" {
     #include <libavformat/avformat.h>
@@ -7,47 +10,39 @@ extern "C" {
     #include <libswresample/swresample.h>
 }
 
-Player::Player() {
+Player::Player(){
     // allocate ring buffer memory
-    unsigned int numFrames = 8192;
+    unsigned int numFrames = 8192; // power of 2
     unsigned int bytesPerFrame = 2 * sizeof(float);
     ringBufferData = new char[numFrames * bytesPerFrame];
     PaUtil_InitializeRingBuffer(&ringBuffer, bytesPerFrame, numFrames, ringBufferData);
-
-    // query portaudio to find default hardware sample rates
 
     // initialize audio hardware
     Pa_Initialize();
 }
 
-Player::~Player() {
+Player::~Player(){
     stop();
     delete[] ringBufferData;
     Pa_Terminate();
 }
 
-void Player::play(const Track& track) {
-    // kill other song if something's being decoded right now
-    stop();
+void Player::play(const Track& track){
+    if (isPlaying)
+    {
+        stop(); // stop playing last song
+    }
 
-    // set new filepath for decoding
     filePath = track.getFilePath();
+    isPlaying = true;
 
-    // reset atomic bools
-    stopRequested.store(false);
-    decoderFinished.store(false);
-    playbackFinished.store(false);
-
-    // flush anything that was in the buffer before
-    PaUtil_FlushRingBuffer(&ringBuffer);
-
-    // open portaudio stream
+    // open PA stream
     Pa_OpenDefaultStream(
         &stream,
         0,
         2,
         paFloat32,
-        44100, // TODO: make output rate the hardware default instead
+        44100,
         256,
         &Player::portAudioCallback,
         this
@@ -55,71 +50,29 @@ void Player::play(const Track& track) {
 
     Pa_StartStream(stream);
 
-    // let class know that we're playing again after stop()
-    state.store(PlaybackState::Playing);
-
+    // launch FFmpeg decoding on background thread to feed ring buffer
     decodeThread = std::thread(&Player::decodeLoop, this);
+    
+    return;
 }
 
-void Player::stop() {
-    // let decode thread know to stop
-    stopRequested.store(true);
+void Player::stop(){
+    if (!isPlaying) return;
+    isPlaying = false;
 
     if (decodeThread.joinable())
     {
         decodeThread.join();
     }
 
-    if (stream) // goodbye stream
+    if (stream)
     {
         Pa_StopStream(stream);
         Pa_CloseStream(stream);
-        stream = nullptr;
+        stream = nullptr;   // clear stream
     }
 
-    PaUtil_FlushRingBuffer(&ringBuffer);
-
-    state.store(PlaybackState::Stopped);
-}
-
-void Player::pause() {
-    if (state.load() == PlaybackState::Playing)
-    {
-        state.store(PlaybackState::Paused);
-    }
-}
-
-void Player::resume() {
-    if (state.load() == PlaybackState::Paused)
-    {
-        state.store(PlaybackState::Playing);
-    }
-}
-
-void Player::togglePause() {
-    if (state.load() == PlaybackState::Playing)
-    {
-        pause();
-    } else if (state.load() == PlaybackState::Paused)
-    {
-        resume();
-    }
-}
-
-void Player::seekTo(double seconds) {
-
-}
-
-void Player::seekBy(double seconds) {
-
-}
-
-double Player::getPosition() const {
-    return 100;
-}
-
-bool Player::consumeFinished() {
-    return playbackFinished.exchange(false);
+    return;
 }
 
 int Player::portAudioCallback(
@@ -128,47 +81,20 @@ int Player::portAudioCallback(
         const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags,
         void* userData
-    ) {
+    ){
         Player* playerInstance = static_cast<Player*>(userData);
 
         // route data to audio processing function
 
         return playerInstance->processAudio(static_cast<float*>(outputBuffer), framesPerBuffer);
-}
-
-int Player::processAudio(float* output, unsigned long framesPerBuffer) {
-    // pull raw PCM blocks from ring buffer here
-
-    // check for playback state, if paused, output complete silence
-    if (state.load() == PlaybackState::Paused)
-    {
-        std::fill(
-            output,
-            output + framesPerBuffer * 2,
-            0.0f
-        );
-
-        return paContinue;
     }
+
+int Player::processAudio(float* output, unsigned long framesPerBuffer){
+    // TODO: Pull raw PCM blocks from ring buffer here
     
     unsigned long framesRead = 0;
 
     ring_buffer_size_t elementsAvailable = PaUtil_GetRingBufferReadAvailable(&ringBuffer);
-
-    // if the song finished, let player know and play silence
-    if (elementsAvailable == 0 && decoderFinished.load())
-    {
-        playbackFinished.store(true);
-        state.store(PlaybackState::Stopped);
-
-        std::fill(
-            output,
-            output + framesPerBuffer * 2,
-            0.0f
-        );
-
-        return paContinue;
-    }
 
     if (elementsAvailable >= framesPerBuffer)
     {
@@ -190,7 +116,7 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
     return paContinue;
 }
 
-void Player::decodeLoop() {
+void Player::decodeLoop(){
     // create a format context and open audio file using path
     AVFormatContext* format_ctx{nullptr};
 
@@ -199,14 +125,14 @@ void Player::decodeLoop() {
 
     if (ret < 0)
     {
-        // std::cerr << "Could not create format context." << std::endl;
+        std::cerr << "Could not create format context." << std::endl;
         return;
     }
 
     ret = avformat_find_stream_info(format_ctx, nullptr);
     if (ret < 0)
     {
-        // std::cerr << "Unable to find stream info." << std::endl;
+        std::cerr << "Unable to find stream info." << std::endl;
         return;
     }
 
@@ -214,7 +140,7 @@ void Player::decodeLoop() {
     int index = av_find_best_stream(format_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
     if (index < 0)
     {
-        // std::cerr << "No audio stream inside of this file." << std::endl;
+        std::cerr << "No audio stream inside of this file." << std::endl;
         return;
     }
 
@@ -225,7 +151,7 @@ void Player::decodeLoop() {
     const AVCodec* decoder = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!decoder)
     {
-        // std::cerr << "No decoder found." << std::endl;
+        std::cerr << "No decoder found." << std::endl;
         return;
     }
 
@@ -238,7 +164,7 @@ void Player::decodeLoop() {
     ret = avcodec_open2(codec_ctx, decoder, nullptr);
     if (ret < 0)
     {
-        // std::cerr << "Could not open decoder." << std::endl;
+        std::cerr << "Could not open decoder." << std::endl;
         return;
     }
 
@@ -264,23 +190,13 @@ void Player::decodeLoop() {
     
     if (ret < 0)
     {
-        // std::cerr << "Could not open resampler!" << std::endl;
+        std::cerr << "Could not open resampler!" << std::endl;
         return;
     }
 
     // actual decode loop
-    while (!stopRequested.load())
+    while ((av_read_frame(format_ctx, packet) == 0) && isPlaying)
     {
-        // check for end of file
-        int readResult = av_read_frame(format_ctx, packet);
-
-        if (readResult < 0)
-        {
-            // end of file
-            decoderFinished.store(true);
-            break;
-        }
-        
         // open frame and send to decoder
         if (packet->stream_index != index) 
         {
@@ -318,18 +234,15 @@ void Player::decodeLoop() {
             int decoded_frames = resampled_frame->nb_samples;
 
             // checking for room in buffer; if none, wait
-            while (!stopRequested.load() && PaUtil_GetRingBufferWriteAvailable(&ringBuffer) < decoded_frames)
+            while (isPlaying && PaUtil_GetRingBufferWriteAvailable(&ringBuffer) < decoded_frames)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
 
-            if (stopRequested.load())
+            if (isPlaying)
             {
-                av_frame_free(&resampled_frame);
-                break;
+                PaUtil_WriteRingBuffer(&ringBuffer, resampled_frame->data[0], decoded_frames);
             }
-            
-            PaUtil_WriteRingBuffer(&ringBuffer, resampled_frame->data[0], decoded_frames);
 
             av_frame_free(&resampled_frame);
         }

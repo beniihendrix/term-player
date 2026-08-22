@@ -16,16 +16,56 @@ and was updated for today's ffmpeg libraries
 
 */
 
-class Player{
+class Player {
+public:
+    enum class PlaybackState {
+        Stopped,
+        Playing,
+        Paused,
+        Seeking
+    };
+
+    Player();
+    ~Player();
+
+    void play(const Track& track);
+
+    void stop();
+
+    void pause();
+    void resume();
+    void togglePause();
+
+    void seekTo(double seconds);
+    void seekBy(double seconds);
+
+    void setVolume(float vol) {
+        volume = vol;
+    };
+    float getVolume() const { return volume; }
+
+    PlaybackState getPlaybackState() const { return state; }
+    double getPosition() const;
+
+    bool consumeFinished();
 private:
     std::string filePath;
+
     PaStream* stream = nullptr;
 
     PaUtilRingBuffer ringBuffer;
-    char* ringBufferData = nullptr; // raw memory for the ring buffer
+    char* ringBufferData = nullptr;
 
     std::thread decodeThread;
-    std::atomic<bool> isPlaying{false};
+
+    std::atomic<PlaybackState> state{PlaybackState::Stopped};
+    std::atomic<bool> stopRequested{false};
+    std::atomic<bool> decoderFinished{false};
+    std::atomic<bool> playbackFinished{false};
+
+    std::atomic<int64_t> seekRequest{-1};
+
+    std::atomic<float> volume{1.0f};
 
     static int portAudioCallback(
         const void* inputBuffer, void* outputBuffer,
@@ -34,14 +74,8 @@ private:
         PaStreamCallbackFlags statusFlags,
         void* userData
     );
-    
-    int processAudio(float* output, unsigned long framesPerBuffer);
-    
-    void decodeLoop();
-public:
-    Player();
-    ~Player();
 
-    void play(const Track& track);
-    void stop();
+    int processAudio(float* output, unsigned long framesPerBuffer);
+
+    void decodeLoop();
 };
