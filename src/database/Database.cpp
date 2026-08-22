@@ -100,6 +100,9 @@ int Database::BuildDataBase(AppState& state, ftxui::ScreenInteractive& screen) {
     // give appstate the entire database to display
     state.search_result = dbQuery("", 0, state);
 
+    // give playbackcontroller instance the playlist
+    state.controller.setPlaylist(state.search_result);
+
     // add number of tracks for string for menu option
     // Take away later
     state.library_entries.clear();

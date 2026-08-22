@@ -54,11 +54,9 @@ ftxui::Component LibraryScreen(AppState& state) {
             return;
         }
 
-        Track& selected_track = state.search_result[state.selected_track];
-        // update track playing
-        state.currently_playing_index = state.selected_track;
-
-        state.player.play(selected_track);
+        state.controller.playIndex(
+            static_cast<std::size_t>(state.selected_track)
+        );
     };
 
     auto song_menu = Menu(

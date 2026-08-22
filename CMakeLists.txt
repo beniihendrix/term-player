@@ -48,6 +48,7 @@ add_executable(PlayerUI
 	src/model/track.cpp
 
 	src/audio/player.cpp
+	src/audio/PlaybackController.cpp
 	src/audio/pa_ringbuffer.c
 )
 

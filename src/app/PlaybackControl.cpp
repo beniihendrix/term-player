@@ -11,26 +11,30 @@ ftxui::Component PlaybackControl(AppState& state) {
 
     // creating the rewind, pause, and skip buttons
     auto skip_button = Button(">>", [&state] {
-        // insert lambda function that controls
-        // the skipping using the player class in state
+        state.controller.skip();
     });
 
     auto pause_button = Button("||", [&state] {
-        // insert lambda function that controls
-        // the playing toggle using the player class in state
+        state.controller.togglePause();
     });
 
     auto rewind_button = Button("<<", [&state] {
-        // insert lambda function that controls
-        // the rewind using the player class in state
+        state.controller.rewind();
     });
 
-    auto volume_slider = Slider("Volume: ",
-        &state.volume,  // volume
-        0,              // min
-        100,            // max
-        5              // increment
-    );
+    // add a slider with a function that updates the controller
+    SliderOption<float> volume_option;
+
+    volume_option.value = state.volume;
+    volume_option.min = 0.0f;
+    volume_option.max = 1.0f;
+    volume_option.increment = 0.05f;
+
+    volume_option.on_change = [&state] {
+        state.controller.setVolume(state.volume);
+    };
+
+    auto volume_slider = Slider(volume_option);
 
     // keeping the components together using a container (enables navigation)
     auto playback_bar = Container::Horizontal({
