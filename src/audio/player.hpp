@@ -2,6 +2,7 @@
 #include <atomic>
 #include <string>
 #include <thread>
+#include <algorithm>
 #include <portaudio.h>
 #include "pa_ringbuffer.h"
 #include "model/track.hpp"
@@ -40,7 +41,8 @@ public:
     void seekBy(double seconds);
 
     void setVolume(float vol) {
-        volume = vol;
+        vol = std::clamp(vol, 0.0f, 1.0f);
+        volume.store(vol);
     };
     float getVolume() const { return volume; }
 

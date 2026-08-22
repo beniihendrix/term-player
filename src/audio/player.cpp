@@ -187,6 +187,15 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
         std::fill(output + floatsWritten, output + totalFloatsNeeded, 0.0f);
     }
     
+
+    // finally multiply all values by volume to lower / heighten volume
+    float gain = volume.load(std::memory_order_relaxed);
+
+    for (unsigned long i = 0; i < framesPerBuffer * 2; i++)
+    {
+        output[i] *= gain;
+    }
+
     return paContinue;
 }
 

@@ -25,7 +25,7 @@ ftxui::Component PlaybackControl(AppState& state) {
     // add a slider with a function that updates the controller
     SliderOption<float> volume_option;
 
-    volume_option.value = state.volume;
+    volume_option.value = &state.volume;
     volume_option.min = 0.0f;
     volume_option.max = 1.0f;
     volume_option.increment = 0.05f;
@@ -60,7 +60,7 @@ ftxui::Component PlaybackControl(AppState& state) {
 
             filler(),
 
-            text("Volume"),
+            text("Volume: " + std::to_string(state.volume)),
             volume_slider->Render()
                 | size(WIDTH, EQUAL, 20),
         });
