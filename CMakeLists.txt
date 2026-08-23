@@ -33,6 +33,9 @@ pkg_check_modules(SWRESAMPLE REQUIRED IMPORTED_TARGET libswresample)
 # check for portaudio
 pkg_check_modules(PORTAUDIO REQUIRED IMPORTED_TARGET portaudio-2.0)
 
+# add fftw with pkgconfig
+pkg_check_modules(FFTW3F REQUIRED IMPORTED_TARGET fftw3f)
+
 add_executable(PlayerUI
 	src/main.cpp
 
@@ -50,6 +53,8 @@ add_executable(PlayerUI
 	src/audio/player.cpp
 	src/audio/PlaybackController.cpp
 	src/audio/pa_ringbuffer.c
+
+	# src/audio/dsp/SpectrumAnalyzer.cpp
 )
 
 target_include_directories(PlayerUI PRIVATE src)
@@ -62,5 +67,6 @@ target_link_libraries(PlayerUI PRIVATE
 	PkgConfig::AVUTIL
 	PkgConfig::SWRESAMPLE
 	PkgConfig::PORTAUDIO
+	PkgConfig::FFTW3F
 	ftxui::ftxui
 )
