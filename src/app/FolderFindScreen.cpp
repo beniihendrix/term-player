@@ -77,7 +77,11 @@ ftxui::Component FolderFindScreen(AppState& state, ftxui::ScreenInteractive& scr
             }),
             separator(),
             path_check->Render(),
-        }) | border;
+            separator(),
+            text(state.mainScreenArt) | center,
+        }) 
+        | border
+        | flex;
     });
 
     return renderer;

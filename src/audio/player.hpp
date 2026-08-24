@@ -53,6 +53,8 @@ public:
 private:
     std::string filePath;
 
+    const PaDeviceInfo* deviceInfo;
+
     PaStream* stream = nullptr;
 
     PaUtilRingBuffer ringBuffer;

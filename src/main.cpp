@@ -9,7 +9,7 @@
 int main(){
 	AppState state;
 
-	auto screen = ftxui::ScreenInteractive::TerminalOutput();
+	auto screen = ftxui::ScreenInteractive::Fullscreen();	// avoids redraw shifts
 
 	auto app = App(state, screen);
 

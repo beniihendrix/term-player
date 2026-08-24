@@ -28,7 +28,9 @@ ftxui::Component PlayerScreen(AppState& state) {
 
         // fix soon
         return vbox({
-            text(playing_track->printASCII()) | center,
+            text(playing_track->printASCII()) 
+            | center
+            | flex,
             separator(),
             text(playing_track->getTitle()),
             text(playing_track->getAlbum()),
@@ -36,7 +38,8 @@ ftxui::Component PlayerScreen(AppState& state) {
 
             separator(),
             playback_bar->Render(),
-        }) | border;
+        }) 
+        | border;
     });
 
     return renderer;

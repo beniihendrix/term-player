@@ -1,4 +1,5 @@
 #include "player.hpp"
+#include <portaudio.h>
 
 extern "C" {
     #include <libavformat/avformat.h>
@@ -18,6 +19,11 @@ Player::Player() {
 
     // initialize audio hardware
     Pa_Initialize();
+
+    // getting the default audio device to test samplerates
+    int device_index = Pa_GetDefaultOutputDevice();
+    // this struct has max channels, default sample rate, etc
+    deviceInfo = Pa_GetDeviceInfo(device_index);
 }
 
 Player::~Player() {
@@ -47,7 +53,8 @@ void Player::play(const Track& track) {
         0,
         2,
         paFloat32,
-        44100, // TODO: make output rate the hardware default instead
+	deviceInfo->defaultSampleRate,
+        // 44100, // TODO: make output rate the hardware default instead
         256,
         &Player::portAudioCallback,
         this
@@ -191,9 +198,16 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
     // finally multiply all values by volume to lower / heighten volume
     float gain = volume.load(std::memory_order_relaxed);
 
-    for (unsigned long i = 0; i < framesPerBuffer * 2; i++)
+    for (unsigned long frame = 0; frame < framesPerBuffer * 2; frame++)
     {
-        output[i] *= gain;
+	const auto leftIndex = 2 * frame;
+	const auto rightIndex = 2 * frame + 1;
+
+	const float mono = 0.5f * (output[leftIndex] + output[rightIndex]);
+
+	// analyzer.loadData(mono)
+        output[leftIndex] *= gain;
+	output[rightIndex] *= gain;
     }
 
     return paContinue;
@@ -264,7 +278,8 @@ void Player::decodeLoop() {
     ret = swr_alloc_set_opts2(&resampler, 
         &stream->codecpar->ch_layout,
         AV_SAMPLE_FMT_FLT,
-        stream->codecpar->sample_rate,
+	static_cast<int>(deviceInfo->defaultSampleRate),
+        // stream->codecpar->sample_rate, old out sample rate
         &stream->codecpar->ch_layout,
         (AVSampleFormat)stream->codecpar->format,
         stream->codecpar->sample_rate,
