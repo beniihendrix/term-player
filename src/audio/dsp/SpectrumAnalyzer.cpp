@@ -1,34 +1,28 @@
 #include "SpectrumAnalyzer.hpp"
 
 SpectrumAnalyzer::SpectrumAnalyzer() {
+	// allocating spectrum ring buffer memory
+	unsigned int numFrames = 8192 / 2;		// since we're mono
+    unsigned int bytesPerFrame = 2 * sizeof(float);
+    ringBufferData = new char[numFrames * bytesPerFrame];
+    PaUtil_InitializeRingBuffer(&ringBufferSpectrum, bytesPerFrame, numFrames, ringBufferData);
+
 	// create fftw plan
 	// define sample ratio, start and end index
 	
 	// sample ratio = frames per buffer / sample rate
 	// start index = sample ratio * freqstart (perhaps with ceiling func)
 	// end index = sample ratio * freqend (with maximum of frames per buffer / 2)
-	//
 }
 
 SpectrumAnalyzer::~SpectrumAnalyzer() {
 	// destroy plan
 	// delete buffers
+	delete[] ringBufferData;
 }
 
-void SpectrumAnalyzer::loadData(float sample) {
-	in[writeIndex++] = sample;
-
-	if (writeIndex == FFT_SIZE)
-	{
-		// collected full fft window
-		// signal that data is ready
-		writeIndex = 0;
-	}
-	// TODO: make flexible number of channels
-
-	// quick for loop (maybe should find a way to throw this in
-	// with the volume function
-	// TODO: Should definitely make inputs references rather than copies
+void SpectrumAnalyzer::loadData(std::vector<float> samples) {
+	
 }
 
 void SpectrumAnalyzer::processFFT() {

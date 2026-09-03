@@ -81,5 +81,8 @@ private:
 
     int processAudio(float* output, unsigned long framesPerBuffer);
 
+    // for sending to spectrum analyzer
+    std::vector<float> mono_queue;
+
     void decodeLoop();
 };

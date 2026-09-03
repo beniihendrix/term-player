@@ -95,7 +95,8 @@ ftxui::Component LibraryScreen(AppState& state) {
                 
                 separator(),
 
-                text(selected_track.printASCII()) | center
+		// adding text ASCII art for selected
+                text(selected_track.printSmallASCII()) | center
             }) | flex,
             separator(),
             playback_bar->Render(),

@@ -6,6 +6,7 @@ extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavutil/avutil.h>
     #include <libswresample/swresample.h>
+    #include <libavutil/log.h>	// for removing log outputs
 }
 
 Player::Player() {
@@ -24,6 +25,9 @@ Player::Player() {
     int device_index = Pa_GetDefaultOutputDevice();
     // this struct has max channels, default sample rate, etc
     deviceInfo = Pa_GetDeviceInfo(device_index);
+
+    // suppress info messages + warnings from ffmpeg
+    av_log_set_level(AV_LOG_ERROR);
 }
 
 Player::~Player() {
@@ -174,6 +178,8 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
             0.0f
         );
 
+        // analyzer.loadData(half of number of floats set to zero)
+
         return paContinue;
     }
 
@@ -200,15 +206,26 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
 
     for (unsigned long frame = 0; frame < framesPerBuffer * 2; frame++)
     {
-	const auto leftIndex = 2 * frame;
-	const auto rightIndex = 2 * frame + 1;
+        const auto leftIndex = 2 * frame;
+        const auto rightIndex = 2 * frame + 1;
 
-	const float mono = 0.5f * (output[leftIndex] + output[rightIndex]);
+        const float mono = 0.5f * (output[leftIndex] + output[rightIndex]);
 
-	// analyzer.loadData(mono)
+        mono_queue.push_back(mono);
+
         output[leftIndex] *= gain;
-	output[rightIndex] *= gain;
+        output[rightIndex] *= gain;
     }
+
+    // analyzer.loadData(mono)
+    /*
+    maybe it should actually be a thread that's detached
+    std::thread(dsp, [&mono] {
+        analyzer.loadData(mono);
+    }).detach();
+    */
+
+    mono_queue.clear();
 
     return paContinue;
 }

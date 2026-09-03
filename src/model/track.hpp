@@ -20,6 +20,7 @@ class Track{
 		
 		// my beautiful ascii generator
 		std::string printASCII() const;
+		std::string printSmallASCII() const;
 
 		// operator overloader test for display track
 		friend std::ostream& operator<<(std::ostream& os, const Track& track){

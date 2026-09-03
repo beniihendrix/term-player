@@ -1,6 +1,8 @@
 #pragma once
 
 #include <fftw3.h>
+#include <portaudio.h>
+#include "pa_ringbuffer.h"
 
 #include <vector>
 
@@ -15,7 +17,7 @@ class SpectrumAnalyzer {
 public:
 	SpectrumAnalyzer();
 	~SpectrumAnalyzer();
-	void loadData(float sample);
+	void loadData(std::vector<float> samples);
 	void processFFT();
 	std::vector<float> getFFT();
 	void flushBuffers();
@@ -32,4 +34,8 @@ private:
 	int freqEnd = 20000;
 	float sampleRate;
 	double binPerHz;
+
+	// ring buffer for FFT calculations
+	PaUtilRingBuffer ringBufferSpectrum;
+	char* ringBufferData = nullptr;
 };
