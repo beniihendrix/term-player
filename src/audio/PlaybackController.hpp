@@ -27,6 +27,7 @@ public:
     void skip();
     void togglePause();
     void playIndex(std::size_t index);
+    double getPosition() const {return player.getPosition(); }
 
     // playback information
     bool hasPlayingTrack() const;

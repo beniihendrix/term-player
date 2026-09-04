@@ -69,6 +69,10 @@ private:
 
     std::atomic<int64_t> seekRequest{-1};
 
+    // playback position
+    std::atomic<double> best_timestamp{0};
+    std::atomic<double> song_length{0};
+
     std::atomic<float> volume{1.0f};
 
     static int portAudioCallback(

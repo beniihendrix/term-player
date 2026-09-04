@@ -51,18 +51,27 @@ ftxui::Component PlaybackControl(AppState& state) {
         volume_slider,
         &state
     ] {
-        return hbox({
-            rewind_button->Render(),
-            text(" "),
-            pause_button->Render(),
-            text(" "),
-            skip_button->Render(),
+        return vbox({
+			hbox({
+            			rewind_button->Render(),
+            			text(" "),
+            			pause_button->Render(),
+            			text(" "),
+            			skip_button->Render(),
 
-            filler(),
+            			filler(),
 
-            text("Volume: " + std::to_string(state.volume)),
-            volume_slider->Render()
-                | size(WIDTH, EQUAL, 20),
-        });
+            			text("Volume: "),
+            			volume_slider->Render()
+                			| size(WIDTH, EQUAL, 20),
+        		}),
+			
+			hbox({
+				text("Progress: " + 
+					std::to_string(state.controller.getPosition())),
+
+				gauge(state.controller.getPosition()) | flex,
+			}),
+		});
     });
 }

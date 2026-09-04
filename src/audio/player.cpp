@@ -48,6 +48,10 @@ void Player::play(const Track& track) {
     decoderFinished.store(false);
     playbackFinished.store(false);
 
+    // update song timestamp info
+    song_length.store(0.0);
+    best_timestamp.store(0.0);
+
     // flush anything that was in the buffer before
     PaUtil_FlushRingBuffer(&ringBuffer);
 
@@ -58,7 +62,6 @@ void Player::play(const Track& track) {
         2,
         paFloat32,
 	deviceInfo->defaultSampleRate,
-        // 44100, // TODO: make output rate the hardware default instead
         256,
         &Player::portAudioCallback,
         this
@@ -118,7 +121,13 @@ void Player::togglePause() {
 }
 
 void Player::seekTo(double seconds) {
-
+	/*
+	 * to seek in stream, we pull the live format context
+	 * and give an int64_t for the timestamp
+	 * we use the function av_seek_frame(),
+	 * but we'll need to add a live gauge
+	 * to choose a real int64_t for real seeking
+	 */
 }
 
 void Player::seekBy(double seconds) {
@@ -126,7 +135,17 @@ void Player::seekBy(double seconds) {
 }
 
 double Player::getPosition() const {
-    return 100;
+   if (song_length <= 0)
+   {
+       return 0;
+   }
+
+    double progress = std::clamp(
+		    best_timestamp.load() / song_length.load(),
+		    0.0,
+		    1.0);
+
+    return progress;
 }
 
 bool Player::consumeFinished() {
@@ -204,7 +223,7 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
     // finally multiply all values by volume to lower / heighten volume
     float gain = volume.load(std::memory_order_relaxed);
 
-    for (unsigned long frame = 0; frame < framesPerBuffer * 2; frame++)
+    for (unsigned long frame = 0; frame < framesPerBuffer; frame++)
     {
         const auto leftIndex = 2 * frame;
         const auto rightIndex = 2 * frame + 1;
@@ -309,6 +328,10 @@ void Player::decodeLoop() {
         return;
     }
 
+
+    // report total song duration
+    song_length.store(stream->duration * av_q2d(stream->time_base));
+
     // actual decode loop
     while (!stopRequested.load())
     {
@@ -353,6 +376,17 @@ void Player::decodeLoop() {
             {
                 std::cout << "could not convert frame!" << std::endl;
             }
+
+	    // update time stamp
+	    if (frame->best_effort_timestamp != AV_NOPTS_VALUE)
+	    {
+		    const double timestamp =
+			    frame->best_effort_timestamp *
+			    av_q2d(stream->time_base);
+
+		    best_timestamp.store(timestamp);
+	    }
+
             av_frame_unref(frame); // frame freed
 
             // now write to buffer

@@ -31,6 +31,9 @@ int main(){
 			screen.Post([&] {
 				state.controller.update();
 			});
+
+			// for ftxui to redraw
+			screen.PostEvent(ftxui::Event::Custom);
 		}
 	});
 
