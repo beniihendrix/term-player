@@ -52,7 +52,7 @@ ftxui::Component PlaybackControl(AppState& state) {
         &state
     ] {
         return vbox({
-			hbox({
+			hbox({  // all controls
             			rewind_button->Render(),
             			text(" "),
             			pause_button->Render(),
@@ -66,11 +66,12 @@ ftxui::Component PlaybackControl(AppState& state) {
                 			| size(WIDTH, EQUAL, 20),
         		}),
 			
-			hbox({
-				text("Progress: " + 
-					std::to_string(state.controller.getPosition())),
-
-				gauge(state.controller.getPosition()) | flex,
+			hbox({  // played, gauge, length
+				text(state.controller.getPosition()),
+                text(" "),
+				gauge(state.controller.getProgress()) | flex,
+                text(" "),
+                text(state.controller.getLength()),
 			}),
 		});
     });

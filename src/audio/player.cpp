@@ -1,6 +1,9 @@
 #include "player.hpp"
 #include <portaudio.h>
 
+#include <chrono>
+#include <format>   // for time progress
+
 extern "C" {
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
@@ -61,7 +64,7 @@ void Player::play(const Track& track) {
         0,
         2,
         paFloat32,
-	deviceInfo->defaultSampleRate,
+	    deviceInfo->defaultSampleRate,
         256,
         &Player::portAudioCallback,
         this
@@ -134,7 +137,7 @@ void Player::seekBy(double seconds) {
 
 }
 
-double Player::getPosition() const {
+double Player::getProgress() const {
    if (song_length <= 0)
    {
        return 0;
@@ -146,6 +149,42 @@ double Player::getPosition() const {
 		    1.0);
 
     return progress;
+}
+
+std::string Player::getPosition() const {
+    // get played duration in seconds
+    std::chrono::duration<double> played_seconds{best_timestamp.load()};
+    
+    // convert to chrono 20++ type
+    std::chrono::hh_mm_ss time_split(
+        played_seconds
+    );
+
+    // build string to output
+    std::string output = std::format("{}:{:02}",
+            time_split.minutes().count(),
+            time_split.seconds().count()
+        );
+
+    return output;
+}
+
+std::string Player::getLength() const {
+    // get total duration in seconds
+    std::chrono::duration<double> total_seconds{song_length.load()};
+
+    // convert to chrono 20++ type
+    std::chrono::hh_mm_ss time_split(
+        total_seconds
+    );
+
+    // build string to output
+    std::string output = std::format("{}:{:02}",
+            time_split.minutes().count(),
+            time_split.seconds().count()
+        );
+
+    return output;
 }
 
 bool Player::consumeFinished() {
@@ -311,20 +350,27 @@ void Player::decodeLoop() {
     // making a resample context for interleaved format and such
     SwrContext* resampler = NULL;
 
-    ret = swr_alloc_set_opts2(&resampler, 
-        &stream->codecpar->ch_layout,
-        AV_SAMPLE_FMT_FLT,
-	static_cast<int>(deviceInfo->defaultSampleRate),
+    ret = swr_alloc_set_opts2(&resampler,   // struct SwrContext
+        &stream->codecpar->ch_layout,       // out ch layout
+        AV_SAMPLE_FMT_FLT,                  // out sample format
+	    static_cast<int>(deviceInfo->defaultSampleRate),    // out sample rate
         // stream->codecpar->sample_rate, old out sample rate
-        &stream->codecpar->ch_layout,
-        (AVSampleFormat)stream->codecpar->format,
-        stream->codecpar->sample_rate,
+        &stream->codecpar->ch_layout,       // in ch layout
+        (AVSampleFormat)stream->codecpar->format,       // in sample format
+        stream->codecpar->sample_rate,      // in sample rate
         0,
         nullptr);
     
     if (ret < 0)
     {
         // std::cerr << "Could not open resampler!" << std::endl;
+        return;
+    }
+
+    // initialize resampler
+    if (swr_init(resampler))
+    {
+        // std::cerr << "Could not initialize resampler!" << std::endl;
         return;
     }
 
@@ -367,7 +413,8 @@ void Player::decodeLoop() {
             // doing a while loop since we may receive multiple frames
             // we resample to interleaved for portaudio
             AVFrame* resampled_frame = av_frame_alloc();
-            resampled_frame->sample_rate = frame->sample_rate;
+            resampled_frame->sample_rate = static_cast<int>(deviceInfo->defaultSampleRate);
+            
             av_channel_layout_copy(&resampled_frame->ch_layout, &frame->ch_layout);
             resampled_frame->format = AV_SAMPLE_FMT_FLT;
 

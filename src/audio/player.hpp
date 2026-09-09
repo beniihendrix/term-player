@@ -47,7 +47,9 @@ public:
     float getVolume() const { return volume; }
 
     PlaybackState getPlaybackState() const { return state; }
-    double getPosition() const;
+    double getProgress() const;
+    std::string getPosition() const;
+    std::string getLength() const;
 
     bool consumeFinished();
 private:
