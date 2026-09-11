@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(PlayerUI LANGUAGES C CXX)
 
-# force cpp17 support
+# force cpp20 support
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -11,6 +11,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # find sqlite
 find_package(SQLite3 REQUIRED)
+
+# for linux users: use old name convention
+if(NOT TARGET SQLite3::SQLite3)
+	add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+endif()
 
 # find taglib
 find_package(PkgConfig REQUIRED)
@@ -54,7 +59,7 @@ add_executable(PlayerUI
 	src/audio/PlaybackController.cpp
 	src/audio/pa_ringbuffer.c
 
-	# src/audio/dsp/SpectrumAnalyzer.cpp
+	src/audio/dsp/SpectrumAnalyzer.cpp
 )
 
 target_include_directories(PlayerUI PRIVATE src)

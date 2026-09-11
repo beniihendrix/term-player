@@ -29,6 +29,9 @@ Player::Player() {
     // this struct has max channels, default sample rate, etc
     deviceInfo = Pa_GetDeviceInfo(device_index);
 
+    // fully initialize analyzer
+    analyzer = new SpectrumAnalyzer(deviceInfo->defaultSampleRate);
+
     // suppress info messages + warnings from ffmpeg
     av_log_set_level(AV_LOG_ERROR);
 }
@@ -37,6 +40,7 @@ Player::~Player() {
     stop();
     delete[] ringBufferData;
     Pa_Terminate();
+    delete(analyzer);
 }
 
 void Player::play(const Track& track) {
@@ -65,7 +69,7 @@ void Player::play(const Track& track) {
         2,
         paFloat32,
 	    deviceInfo->defaultSampleRate,
-        256,
+        FRAMES_PER_BUFFER,
         &Player::portAudioCallback,
         this
     );
@@ -267,23 +271,20 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
         const auto leftIndex = 2 * frame;
         const auto rightIndex = 2 * frame + 1;
 
-        const float mono = 0.5f * (output[leftIndex] + output[rightIndex]);
-
-        mono_queue.push_back(mono);
-
+        // apply volume
         output[leftIndex] *= gain;
         output[rightIndex] *= gain;
+
+        // generate mono analyzer signal
+        monoBuffer[frame] = 0.5f * (output[leftIndex] + output[rightIndex]);
     }
 
-    // analyzer.loadData(mono)
-    /*
-    maybe it should actually be a thread that's detached
-    std::thread(dsp, [&mono] {
-        analyzer.loadData(mono);
-    }).detach();
-    */
-
-    mono_queue.clear();
+    analyzer->loadData(
+        std::span<const float>(
+            monoBuffer.data(),
+            framesPerBuffer
+        )
+    );
 
     return paContinue;
 }

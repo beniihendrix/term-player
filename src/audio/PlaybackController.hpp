@@ -37,6 +37,9 @@ public:
     std::optional<std::size_t> getPlayingIndex() const;
 
     Player::PlaybackState getPlaybackState() const;
+
+    // analyzer gets
+    auto getGraph() {return player.getGraph(); }
     
     // in case a song finishes and needs to go to the next
     void update();

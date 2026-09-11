@@ -68,7 +68,7 @@ int Database::BuildDataBase(AppState& state, ftxui::ScreenInteractive& screen) {
                 std::string ext = filePath.extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-                if (ext == ".mp3" || ext == ".m4a")
+                if (ext == ".mp3" || ext == ".m4a" || ext == ".wav")
                 {
                     std::string fullPathStr = filePath.string();
 

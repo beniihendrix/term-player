@@ -3,9 +3,11 @@
 #include <string>
 #include <thread>
 #include <algorithm>
+#include <vector>
 #include <portaudio.h>
 #include "pa_ringbuffer.h"
 #include "model/track.hpp"
+#include "dsp/SpectrumAnalyzer.hpp"
 
 /*
 
@@ -52,12 +54,17 @@ public:
     std::string getLength() const;
 
     bool consumeFinished();
+
+    // analyzer gets
+    auto getGraph() { return analyzer->getGraph(); }
 private:
     std::string filePath;
 
     const PaDeviceInfo* deviceInfo;
 
     PaStream* stream = nullptr;
+
+    static constexpr std::size_t FRAMES_PER_BUFFER = 256;
 
     PaUtilRingBuffer ringBuffer;
     char* ringBufferData = nullptr;
@@ -88,7 +95,9 @@ private:
     int processAudio(float* output, unsigned long framesPerBuffer);
 
     // for sending to spectrum analyzer
-    std::vector<float> mono_queue;
+    std::array<float, FRAMES_PER_BUFFER> monoBuffer;
+    // spectrum analyzer
+    SpectrumAnalyzer* analyzer = nullptr;
 
     void decodeLoop();
 };
