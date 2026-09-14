@@ -51,6 +51,27 @@ ftxui::Component PlaybackControl(AppState& state) {
         volume_slider,
         &state
     ] {
+        // using the new call to get currently playing track
+        const Track* playing_track = state.controller.getPlayingTrack();
+
+        Element track_info;
+
+        if (!playing_track)
+        {
+            track_info = vbox({
+                filler(),
+                text("Nothing Playing") | center,
+                filler(),
+            }) | center;
+        } else
+        {
+            track_info = vbox({
+                text(playing_track->getTitle()) | center,
+                text(playing_track->getAlbum()) | center,
+                text(playing_track->getArtist())| center,
+            }) | center;
+        }
+
         return vbox({
 			hbox({  // all controls
             	rewind_button->Render(),
@@ -58,6 +79,10 @@ ftxui::Component PlaybackControl(AppState& state) {
         		pause_button->Render(),
     			text(" "),
             	skip_button->Render(),
+                
+                filler(),
+
+                track_info,
 
             	filler(),
 

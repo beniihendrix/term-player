@@ -96,12 +96,6 @@ ftxui::Component PlayerScreen(AppState& state) {
 
             separator(),
 
-            text(playing_track->getTitle()),
-            text(playing_track->getAlbum()),
-            text(playing_track->getArtist()),
-
-            separator(),
-
             playback_bar->Render()
                 | size(HEIGHT, EQUAL, 4),
         }) 
