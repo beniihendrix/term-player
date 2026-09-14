@@ -90,16 +90,20 @@ ftxui::Component PlayerScreen(AppState& state) {
                 separator(),
 
                 graph(spectrum)
-                    | size(HEIGHT, EQUAL, 12)
+                    | size(HEIGHT, EQUAL, 60)
                     | flex,
-            }),
+            }) | flex,
+
             separator(),
+
             text(playing_track->getTitle()),
             text(playing_track->getAlbum()),
             text(playing_track->getArtist()),
 
             separator(),
-            playback_bar->Render(),
+
+            playback_bar->Render()
+                | size(HEIGHT, EQUAL, 4),
         }) 
         | border;
     });

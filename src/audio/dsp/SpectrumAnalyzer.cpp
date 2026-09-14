@@ -77,6 +77,10 @@ SpectrumAnalyzer::SpectrumAnalyzer(double deviceSampRate) {
 		0.0f
 	);
 
+	// set graphs to -120dBFs
+	smoothedGraph.fill(-120.0f);
+	graphBins.fill(-120.0f);
+
 	// allocate memory for output
 	fftOutput = fftwf_alloc_complex(FFT_BINS);
 
@@ -217,10 +221,16 @@ void SpectrumAnalyzer::processFFT(std::array<float, HOP_SIZE>& hop) {
 		localGraph[bar] = maxDb;
 	}
 
+	// add to smoothing graph
+	for (std::size_t i = 0; i < DISPLAY_BINS; i++)
+	{
+		smoothedGraph[i] = alpha * localGraph[i] + (1.0 - alpha) * smoothedGraph[i];
+	}
+
 	// publish finished results with mutex
 	{
 		std::lock_guard<std::mutex> lock(graphMutex);
-		graphBins = localGraph;
+		graphBins = smoothedGraph;
 	}
 }
 

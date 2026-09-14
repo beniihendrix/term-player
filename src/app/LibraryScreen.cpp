@@ -92,11 +92,6 @@ ftxui::Component LibraryScreen(AppState& state) {
                 | vscroll_indicator
                 | frame
                 | flex,
-                
-                separator(),
-
-		// adding text ASCII art for selected
-                text(selected_track.printSmallASCII()) | center
             }) | flex,
             separator(),
             playback_bar->Render(),

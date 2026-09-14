@@ -62,6 +62,8 @@ private:
 	std::array<float, FFT_SIZE> window{};
 	std::array<float, FFT_SIZE> windowedInput{};
 	std::array<float, FFT_SIZE> hannWindow{};
+	std::array<float, DISPLAY_BINS> smoothedGraph{};
+	static constexpr float alpha = 0.2f;	// exponential smoothing alpha constant
 	float windowSum = 0.0f;
 
 	// published UI data

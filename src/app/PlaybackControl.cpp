@@ -53,18 +53,18 @@ ftxui::Component PlaybackControl(AppState& state) {
     ] {
         return vbox({
 			hbox({  // all controls
-            			rewind_button->Render(),
-            			text(" "),
-            			pause_button->Render(),
-            			text(" "),
-            			skip_button->Render(),
+            	rewind_button->Render(),
+            	text(" "),
+        		pause_button->Render(),
+    			text(" "),
+            	skip_button->Render(),
 
-            			filler(),
+            	filler(),
 
-            			text("Volume: "),
-            			volume_slider->Render()
-                			| size(WIDTH, EQUAL, 20),
-        		}),
+            	text("Volume: "),
+            	volume_slider->Render()
+                | size(WIDTH, EQUAL, 20),
+        	}),
 			
 			hbox({  // played, gauge, length
 				text(state.controller.getPosition()),
@@ -73,6 +73,7 @@ ftxui::Component PlaybackControl(AppState& state) {
                 text(" "),
                 text(state.controller.getLength()),
 			}),
-		});
+		})
+        | size(HEIGHT, EQUAL, 4);
     });
 }

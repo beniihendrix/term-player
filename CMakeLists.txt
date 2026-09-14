@@ -25,7 +25,7 @@ pkg_check_modules(TAGLIB REQUIRED IMPORTED_TARGET taglib)
 include(FetchContent)
 FetchContent_Declare(ftxui
   GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-  GIT_TAG main # or a specific version like v7.0.3
+  GIT_TAG v7.0.3 # lock to a specific version
 )
 FetchContent_MakeAvailable(ftxui)
 

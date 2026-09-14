@@ -221,6 +221,29 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
             0.0f
         );
 
+        float gain = volume.load(std::memory_order_relaxed);
+
+        // add to mono buffer and give to analyzer
+        for (unsigned long frame = 0; frame < framesPerBuffer; frame++)
+        {
+            const auto leftIndex = 2 * frame;
+            const auto rightIndex = 2 * frame + 1;
+
+            // apply volume
+            output[leftIndex] *= gain;
+            output[rightIndex] *= gain;
+
+            // generate mono analyzer signal
+            monoBuffer[frame] = 0.5f * (output[leftIndex] + output[rightIndex]);
+        }
+
+        analyzer->loadData(
+            std::span<const float>(
+                monoBuffer.data(),
+                framesPerBuffer
+            )
+        );
+
         return paContinue;
     }
     
@@ -240,7 +263,28 @@ int Player::processAudio(float* output, unsigned long framesPerBuffer) {
             0.0f
         );
 
-        // analyzer.loadData(half of number of floats set to zero)
+        float gain = volume.load(std::memory_order_relaxed);
+
+        // add to mono buffer and give to analyzer
+        for (unsigned long frame = 0; frame < framesPerBuffer; frame++)
+        {
+            const auto leftIndex = 2 * frame;
+            const auto rightIndex = 2 * frame + 1;
+
+            // apply volume
+            output[leftIndex] *= gain;
+            output[rightIndex] *= gain;
+
+            // generate mono analyzer signal
+            monoBuffer[frame] = 0.5f * (output[leftIndex] + output[rightIndex]);
+        }
+
+        analyzer->loadData(
+            std::span<const float>(
+                monoBuffer.data(),
+                framesPerBuffer
+            )
+        );
 
         return paContinue;
     }
