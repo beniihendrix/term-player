@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <numbers>
 #include <numeric>
+#include <cmath>	// apparent linux blocker
 
 SpectrumAnalyzer::SpectrumAnalyzer(double deviceSampRate) {
 	// allocating spectrum ring buffer memory
