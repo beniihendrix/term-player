@@ -41,6 +41,26 @@ struct AppState {
     int selected_track = 0; // only UI needs to know
     float volume = 1.0f;    // just for UI
 
+    // album art data
+    struct AlbumArt 
+    {
+        std::vector<unsigned char> pixels;
+
+        int source_width = 0;
+        int source_height = 0;
+
+        std::string file_path;
+
+        std::string ascii = "No Album to Display";
+
+        int rendered_width = 0;
+        int rendered_height = 0;
+
+        bool loaded = false;
+    };
+
+    AlbumArt album_art;
+
     void SetScreen(Screen screen) {
         screen_index = static_cast<int>(screen);
     }

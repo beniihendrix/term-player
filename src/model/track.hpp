@@ -2,6 +2,8 @@
 
 #include <string>
 #include <iostream>
+#include <filesystem>
+#include <vector>
 
 class Track{
 	public:
@@ -17,10 +19,23 @@ class Track{
 		int getYear() const {return year; }
 		float getSampleRate() const {return sampleRate; }
 		int getBitRate() const {return bitrate; }
+		std::string getExtension() const;
 		
-		// my beautiful ascii generator
-		std::string printASCII() const;
-		std::string printSmallASCII() const;
+		// ascii generation
+		bool loadAlbumArt(
+			std::vector<unsigned char>& pixels, 
+			int& width, 
+			int& height
+		) const;
+		std::string renderASCII(
+			const std::vector<unsigned char>& pixels,
+			int sourceWidth,
+			int sourceHeight,
+			int maxWidth,
+			int maxHeight
+		) const;
+		std::vector<unsigned char> getAlbumArt() const;
+		std::string printASCII(int maxWidth, int maxHeight) const;
 
 		// operator overloader test for display track
 		friend std::ostream& operator<<(std::ostream& os, const Track& track){
@@ -32,6 +47,7 @@ class Track{
 		void printFull() const;	// const because it doesn't change any members
 	private:
 		std::string filePath;
+		std::filesystem::path filePathObject;
 		std::string title = "Unknown Title";
 		std::string artist = "Unkown Artist";
 		std::string album = "Unknown Album";

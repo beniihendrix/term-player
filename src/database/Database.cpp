@@ -21,7 +21,8 @@ int Database::InitializeDatabase() {
 		"title TEXT DEFAULT 'Unknown Title', "
 		"artist TEXT DEFAULT 'Unknown Artist', "
 		"album TEXT DEFAULT 'Unknown Album', "
-		"track_number INTEGER DEFAULT 0);";
+		"track_number INTEGER DEFAULT 0, "
+        "extension TEXT DEFAULT 'Unknown Extension');";
 
     // attempting table opening with sqlite3_exec
     int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errorMessage);
@@ -68,7 +69,7 @@ int Database::BuildDataBase(AppState& state, ftxui::ScreenInteractive& screen) {
                 std::string ext = filePath.extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-                if (ext == ".mp3" || ext == ".m4a" || ext == ".wav")
+                if (ext == ".flac" || ext == ".mp3" || ext == ".m4a" || ext == ".wav")
                 {
                     std::string fullPathStr = filePath.string();
 
@@ -119,8 +120,8 @@ bool Database::InsertTrack(const Track& track) {
     sqlite3_stmt* stmt = nullptr;
 
     // creating sql command with '?' placeholders
-    std::string sql = "INSERT OR IGNORE INTO tracks (file_path, title, artist, album, track_number) "
-		"VALUES (?, ?, ?, ?, ?);";
+    std::string sql = "INSERT OR IGNORE INTO tracks (file_path, title, artist, album, track_number, extension) "
+		"VALUES (?, ?, ?, ?, ?, ?);";
 
     // compiling text into binary for sqlite
     int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
@@ -136,6 +137,7 @@ bool Database::InsertTrack(const Track& track) {
 	sqlite3_bind_text(stmt, 3, track.getArtist().c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_bind_text(stmt, 4, track.getAlbum().c_str(), -1, SQLITE_TRANSIENT);
 	sqlite3_bind_int(stmt, 5, track.getTrack_Num());
+    sqlite3_bind_text(stmt, 6, track.getExtension().c_str(), -1, SQLITE_TRANSIENT);
 
     // execute statement
 	rc = sqlite3_step(stmt);
@@ -160,18 +162,38 @@ std::vector<Track> Database::dbQuery(const std::string& search, int searchType, 
 	// determine what kind of search with switch statement
 	switch (searchType)
 	{
-		case 0:	// artist
-			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE artist LIKE ? ORDER BY album ASC, track_number ASC;";
-			break;
-		case 1: // album
-			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE album LIKE ? ORDER BY track_number ASC;";
-			break;
-		case 2:	// song
-			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE title LIKE ? ORDER BY artist ASC, album ASC, track_number ASC;";
-			break;
-		default: // fallback in case invalid int was passed
-			sql = "SELECT file_path, title, artist, album, track_number FROM tracks WHERE artist LIKE ? ORDER BY album ASC, track_number ASC;";
-			break;
+		case 0: // artist
+            sql =
+                "SELECT file_path, title, artist, album, track_number "
+                "FROM tracks "
+                "WHERE artist LIKE ? "
+                "ORDER BY "
+                "album COLLATE NOCASE ASC, "
+                "extension COLLATE NOCASE ASC, "
+                "track_number ASC;";
+            break;
+
+        case 1: // album
+            sql =
+                "SELECT file_path, title, artist, album, track_number "
+                "FROM tracks "
+                "WHERE album LIKE ? "
+                "ORDER BY "
+                "extension COLLATE NOCASE ASC, "
+                "track_number ASC;";
+            break;
+
+        case 2: // song
+            sql =
+                "SELECT file_path, title, artist, album, track_number "
+                "FROM tracks "
+                "WHERE title LIKE ? "
+                "ORDER BY "
+                "artist COLLATE NOCASE ASC, "
+                "album COLLATE NOCASE ASC, "
+                "extension COLLATE NOCASE ASC, "
+                "track_number ASC;";
+            break;
 	}
 
 	sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);

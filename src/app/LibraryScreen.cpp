@@ -33,10 +33,12 @@ ftxui::Component LibraryScreen(AppState& state) {
                     | size(WIDTH, EQUAL, 30),
                 // display album
                 text(track.getAlbum())
-                    | size(WIDTH, EQUAL, 25),
+                    | size(WIDTH, EQUAL, 50),
                 // display artist
                 text(track.getArtist())
                     | size(WIDTH, EQUAL, 25),
+                text(track.getExtension())
+                    | size(WIDTH, EQUAL, 10)
             });
 
             if (entry.active)
@@ -78,10 +80,11 @@ ftxui::Component LibraryScreen(AppState& state) {
         // pulling the address of the selected track
         
         auto header = hbox({
-            text("#")       | size(WIDTH, EQUAL, 5),
-            text("Title")   | size(WIDTH, EQUAL, 30),
-            text("Album")   | size(WIDTH, EQUAL, 25),
-            text("Artist")  | size(WIDTH, EQUAL, 25),
+            text("#")           | size(WIDTH, EQUAL, 5),
+            text("Title")       | size(WIDTH, EQUAL, 30),
+            text("Album")       | size(WIDTH, EQUAL, 50),
+            text("Artist")      | size(WIDTH, EQUAL, 25),
+            text("Extension")   | size(WIDTH, EQUAL, 10),
         });
 
         return vbox({

@@ -5,6 +5,12 @@
 #include <taglib/fileref.h>
 #include <taglib/tag.h>
 #include <mpegfile.h>
+
+// ffmpeg for pulling album art
+extern "C" {
+	#include <libavformat/avformat.h>
+}
+
 #include <id3v2tag.h>
 #include <taglib/attachedpictureframe.h>
 
@@ -14,6 +20,7 @@
 
 Track::Track(std::string filePath){
 	this->filePath = filePath;
+	filePathObject = filePath;
 
 	// use taglib to find the audio info
 	TagLib::FileRef f(filePath.c_str());
@@ -41,39 +48,58 @@ Track::Track(std::string filePath){
 	}
 }
 
-std::string Track::printASCII() const{
+std::vector<unsigned char> Track::getAlbumArt() const {
+	AVFormatContext* formatContext = nullptr;
+
+	if (avformat_open_input(&formatContext, filePath.c_str(), nullptr, nullptr) < 0)
+	{
+		return {};
+	}
+
+	if (avformat_find_stream_info(formatContext,nullptr) < 0)
+	{
+		avformat_close_input(&formatContext);
+		return {};
+	}
+
+	std::vector<unsigned char> imageData;
+
+	for (unsigned int i = 0; i < formatContext->nb_streams; i++)
+	{
+		AVStream* stream = formatContext->streams[i];
+
+		if (stream->disposition & AV_DISPOSITION_ATTACHED_PIC)
+		{
+			const AVPacket& picture = stream->attached_pic;
+
+			imageData.assign(
+				picture.data,
+				picture.data + picture.size
+			);
+
+			break;
+		}
+	}
+
+	avformat_close_input(&formatContext);
+	return imageData;
+}
+
+std::string Track::printASCII(int maxWidth, int maxHeight) const{
 	// extract cover art image data
-	TagLib::MPEG::File mpegFile(filePath.c_str());
-	if (!mpegFile.isValid() || !mpegFile.ID3v2Tag())
+	auto imageData = getAlbumArt();
+
+	if (imageData.empty())
 	{
-		// std::cerr << "Could not read audio file or metadata.\n";
-		return "Could not display file";
-	}
-
-	TagLib::ID3v2::Tag* id3v2 = mpegFile.ID3v2Tag();
-	TagLib::ID3v2::FrameList frames = id3v2->frameList("APIC");
-
-	if (frames.isEmpty())
-	{
-		// std::cout << "No album art image found in this track.\n";
-		return "No album art image found in this track.\n";
-	}
-
-	auto* frame = static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frames.front());
-	TagLib::ByteVector imgData = frame->picture();
-
-	if (imgData.isEmpty())
-	{
-		// std::cout << "Album art buffer is empty.\n";
-		return "Album art buffer is empty.\n";
+		return "No album art image found.";
 	}
 
 	// now hand raw bytes to stb_image
 	int width, height, originalChannels;
 
 	unsigned char* pixels = stbi_load_from_memory(
-			reinterpret_cast<const unsigned char*>(imgData.data()),
-			imgData.size(),
+			imageData.data(),
+			static_cast<int>(imageData.size()),
 			&width,
 			&height,
 			&originalChannels,
@@ -87,9 +113,35 @@ std::string Track::printASCII() const{
 	}
 
 	// turn to ascii
-	const int targetWidth = 60; // semi arbitrary number
-	const double charAspectRatio = 2.0;	// characters are tall
-	int targetHeight = static_cast<int>((static_cast<double>(height) / width) * targetWidth / charAspectRatio);
+	const double charAspectRatio = 2.0;
+
+	int targetWidth = maxWidth;
+
+	int targetHeight =
+		static_cast<int>(
+			(static_cast<double>(height) / width) *
+			targetWidth /
+			charAspectRatio
+		);
+
+	// if target box is small rectangle
+	if (targetHeight > maxHeight)
+	{
+		targetHeight = maxHeight;
+
+		targetWidth =
+			static_cast<int>(
+				(static_cast<double>(width) / height) *
+				targetHeight *
+				charAspectRatio
+			);
+	}
+
+	targetWidth =
+		std::max(1, targetWidth);
+
+	targetHeight =
+		std::max(1, targetHeight);
 
 	// ascii characters from dark to light
 	const std::string asciiRamp = " .:-=+*#%@";
@@ -115,82 +167,172 @@ std::string Track::printASCII() const{
 	return output_frame;
 }
 
-std::string Track::printSmallASCII() const{
-	// extract cover art image data
-	TagLib::MPEG::File mpegFile(filePath.c_str());
-	if (!mpegFile.isValid() || !mpegFile.ID3v2Tag())
+bool Track::loadAlbumArt(
+	std::vector<unsigned char>& pixels, 
+	int& width, 
+	int& height) const 
+{
+
+	pixels.clear();
+	width = 0;
+	height = 0;
+	
+	AVFormatContext* formatContext = nullptr;
+
+	if (avformat_open_input(&formatContext, filePath.c_str(), nullptr, nullptr) < 0)
 	{
-		// std::cerr << "Could not read audio file or metadata.\n";
-		return "Could not display file";
+		return {};
 	}
 
-	TagLib::ID3v2::Tag* id3v2 = mpegFile.ID3v2Tag();
-	TagLib::ID3v2::FrameList frames = id3v2->frameList("APIC");
-
-	if (frames.isEmpty())
+	if (avformat_find_stream_info(formatContext,nullptr) < 0)
 	{
-		// std::cout << "No album art image found in this track.\n";
-		return "No album art image found in this track.\n";
+		avformat_close_input(&formatContext);
+		return {};
 	}
 
-	auto* frame = static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frames.front());
-	TagLib::ByteVector imgData = frame->picture();
-
-	if (imgData.isEmpty())
+	for (unsigned int i = 0; i < formatContext->nb_streams; i++)
 	{
-		// std::cout << "Album art buffer is empty.\n";
-		return "Album art buffer is empty.\n";
-	}
+		AVStream* stream = formatContext->streams[i];
 
-	// now hand raw bytes to stb_image
-	int width, height, originalChannels;
-
-	unsigned char* pixels = stbi_load_from_memory(
-			reinterpret_cast<const unsigned char*>(imgData.data()),
-			imgData.size(),
-			&width,
-			&height,
-			&originalChannels,
-			1	// for turning to grayscale
-	);
-
-	if (!pixels)
-	{
-		// std::cerr << "Failed to decode image data.\n";
-		return "Failed to decode image data.\n";
-	}
-
-	// turn to ascii
-	const int targetWidth = 30; // semi arbitrary number (smaller)
-	const double charAspectRatio = 2.0;	// characters are tall
-	int targetHeight = static_cast<int>((static_cast<double>(height) / width) * targetWidth / charAspectRatio);
-
-	// ascii characters from dark to light
-	const std::string asciiRamp = " .:-=+*#%@";
-	std::string output_frame = "";
-
-	for (int y = 0; y < targetHeight; y++)
-	{
-		for (int x = 0; x < targetWidth; x++)
+		if (stream->disposition & AV_DISPOSITION_ATTACHED_PIC)
 		{
-			// mapping to new plane
-			int origX = x * width / targetWidth;
-			int origY = y * height / targetHeight;
+			const AVPacket& picture = stream->attached_pic;
 
-			unsigned char brightness = pixels[origY * width + origX];
-			int rampIndex = (brightness * (asciiRamp.length() -1)) / 255;
-			output_frame += asciiRamp[rampIndex];
+			int channels = 0;
+
+			unsigned char* decoded = stbi_load_from_memory(
+				picture.data,
+				picture.size,
+				&width,
+				&height,
+				&channels,
+				1	// grayscale
+			);
+
+			std::size_t pixelCount = 
+				static_cast<std::size_t>(width) *
+				static_cast<std::size_t>(height);
+
+			pixels.assign(
+				decoded,
+				decoded + pixelCount
+			);
+
+			stbi_image_free(decoded);
+
+			avformat_close_input(&formatContext);
+
+			return true;
 		}
-		output_frame += "\n";
 	}
 
-	stbi_image_free(pixels);
+	avformat_close_input(&formatContext);
+	return false;
+}
 
-	return output_frame;
+
+std::string Track::renderASCII(
+	const std::vector<unsigned char>& pixels,
+	int sourceWidth,
+	int sourceHeight,
+	int maxWidth,
+	int maxHeight) const 
+{
+
+	if (pixels.empty() || 
+		sourceWidth <= 0 ||
+		sourceHeight <= 0 ||
+		maxWidth <= 0 ||
+		maxHeight < 0)
+	{
+		return "No Album Art";
+	}
+
+	const double charAspectRatio = 2.0;
+
+	int targetWidth = maxWidth;
+
+    int targetHeight =
+        static_cast<int>(
+            (
+                static_cast<double>(sourceHeight) /
+                sourceWidth
+            )
+            * targetWidth
+            / charAspectRatio
+        );
+
+    // If width-based scaling makes it too tall,
+    // scale based on height instead.
+    if (targetHeight > maxHeight)
+    {
+        targetHeight = maxHeight;
+
+        targetWidth =
+            static_cast<int>(
+                (
+                    static_cast<double>(sourceWidth) /
+                    sourceHeight
+                )
+                * targetHeight
+                * charAspectRatio
+            );
+    }
+
+    targetWidth =
+        std::max(1, targetWidth);
+
+    targetHeight =
+        std::max(1, targetHeight);
+
+    const std::string asciiRamp =
+        " .:-=+*#%@";
+
+    std::string output;
+
+    output.reserve(
+        (targetWidth + 1) *
+        targetHeight
+    );
+
+    for (int y = 0; y < targetHeight; ++y)
+    {
+        int sourceY =
+            y * sourceHeight /
+            targetHeight;
+
+        for (int x = 0; x < targetWidth; ++x)
+        {
+            int sourceX =
+                x * sourceWidth /
+                targetWidth;
+
+            unsigned char brightness =
+                pixels[
+                    sourceY * sourceWidth +
+                    sourceX
+                ];
+
+            std::size_t rampIndex =
+                brightness *
+                (asciiRamp.size() - 1) /
+                255;
+
+            output += asciiRamp[rampIndex];
+        }
+
+        output += '\n';
+    }
+
+    return output;
+}
+
+std::string Track::getExtension() const {
+	return filePathObject.extension().string();
 }
 
 void Track::printFull() const {
-	this->printASCII();
+	this->printASCII(50, 50);
 	std::cout << "File Location: " << filePath << "\n";
 	std::cout << "Title: " << title << "\n";
 	std::cout << "Album: " << album << "\n";
