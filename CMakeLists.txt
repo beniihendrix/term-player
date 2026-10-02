@@ -50,6 +50,7 @@ add_executable(PlayerUI
 	src/app/LibraryScreen.cpp
 	src/app/PlayerScreen.cpp
 	src/app/PlaybackControl.cpp
+	src/app/SpectrogramScreen.cpp
 
 	src/database/Database.cpp
 

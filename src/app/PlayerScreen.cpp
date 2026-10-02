@@ -1,7 +1,6 @@
 #include "PlayerScreen.hpp"
 #include "PlaybackControl.hpp"
 
-#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -15,64 +14,12 @@ ftxui::Component PlayerScreen(AppState& state) {
     
     // initialize playback bar
     auto playback_bar = PlaybackControl(state);
-
-    // create graph
-    auto spectrum = [&state](int width, int height) {
-        std::vector<int> output(width, 0);
-
-        // expose the analyzer output
-        auto bins = state.controller.getGraph();
-
-        if (bins.empty() || width <= 0 || height <= 0)
-        {
-            return output;
-        }
-
-        for (int x = 0; x < width; x++)
-        {
-            // map terminal column per spectrum bin
-            std::size_t bin =
-                static_cast<std::size_t>(
-                    static_cast<double>(x) /
-                    static_cast<double>(width) *
-                    bins.size()
-                );
-            
-            bin = std::min(
-                bin,
-                bins.size() - 1
-            );
-
-            float value = bins[bin];
-
-            constexpr float minDb = -80.0f;
-            constexpr float maxDb = 0.0f;
-
-            float normalized =
-                (value - minDb) /
-                (maxDb - minDb);
-
-            normalized = std::clamp(
-                normalized,
-                0.0f,
-                1.0f
-            );
-
-            output[x] = static_cast<int>(
-                normalized * height
-            );
-        }
-
-        return output;
-    };
-
-
+    
     auto renderer = Renderer(
         playback_bar, 
         [
             playback_bar,
             &state,
-            spectrum,
             albumBox = Box{}
         ]() mutable {
         // using the new call to get currently playing track
@@ -148,11 +95,6 @@ ftxui::Component PlayerScreen(AppState& state) {
         return vbox({
             hbox({
                 albumPane,
-
-                separator(),
-
-                graph(spectrum)
-                    | flex,
             }) | flex,
 
             separator(),

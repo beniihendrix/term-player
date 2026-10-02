@@ -16,7 +16,8 @@ struct AppState {
         FolderFind = 0,
         Loading,
         Library,
-        Player
+        Player,
+	Spectrogram
     };
 
     int screen_index = static_cast<int>(Screen::FolderFind);
